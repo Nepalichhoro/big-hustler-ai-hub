@@ -3,6 +3,8 @@ import torch.nn as nn
 import math
 
 
+# ============ MODEL COMPONENTS ============
+
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, max_len: int = 5000):
         super().__init__()
@@ -15,9 +17,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x shape: [batch_size, seq_len, d_model]
-        x = x + self.pe[:, :x.size(1)]
-        return x
+        return x + self.pe[:, :x.size(1)]
 
 
 class MultiHeadSelfAttention(nn.Module):
@@ -32,19 +32,18 @@ class MultiHeadSelfAttention(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T, C = x.shape
-        qkv = self.qkv_proj(x)  # shape: [B, T, 3 * C]
+        qkv = self.qkv_proj(x)
         q, k, v = qkv.chunk(3, dim=-1)
 
-        def split_heads(tensor):
-            return tensor.view(B, T, self.num_heads, self.d_k).transpose(1, 2)  # [B, heads, T, d_k]
+        def split_heads(t):
+            return t.view(B, T, self.num_heads, self.d_k).transpose(1, 2)
 
         q, k, v = split_heads(q), split_heads(k), split_heads(v)
 
-        attn_scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.d_k)  # [B, heads, T, T]
-        attn_weights = torch.softmax(attn_scores, dim=-1)
-        attn_output = attn_weights @ v  # [B, heads, T, d_k]
-
-        concat = attn_output.transpose(1, 2).contiguous().view(B, T, C)  # [B, T, d_model]
+        scores = q @ k.transpose(-2, -1) / math.sqrt(self.d_k)
+        attn_weights = torch.softmax(scores, dim=-1)
+        attn_output = attn_weights @ v
+        concat = attn_output.transpose(1, 2).contiguous().view(B, T, C)
         return self.out_proj(concat)
 
 
@@ -70,19 +69,10 @@ class TransformerEncoderBlock(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Step 4: Multi-Head Self-Attention
         attn_output = self.attn(x)
-
-        # Step 5: Residual + LayerNorm
         x = self.norm1(x + attn_output)
-
-        # Step 6: Feed Forward
         ffn_output = self.ffn(x)
-
-        # Step 7: Residual + LayerNorm
         x = self.norm2(x + ffn_output)
-
-        # Step 8: Output of Encoder Block
         return x
 
 
@@ -96,26 +86,78 @@ class TransformerEncoder(nn.Module):
         ])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Step 1 & 2: Word Embedding + Positional Encoding
-        x = self.embedding(x)  # [B, seq_len, d_model]
-        x = self.pos_encoding(x)  # [B, seq_len, d_model]
-
-        # Step 3–8: Encoder Layers
+        x = self.embedding(x)
+        x = self.pos_encoding(x)
         for layer in self.encoder_layers:
             x = layer(x)
+        return x
 
-        return x  # Final encoder output
+
+# ============ TESTS ============
+
+def test_positional_encoding():
+    d_model = 16
+    seq_len = 5
+    batch_size = 2
+    pos_enc = PositionalEncoding(d_model)
+    x = torch.zeros(batch_size, seq_len, d_model)
+    out = pos_enc(x)
+    assert out.shape == (batch_size, seq_len, d_model)
+    print("[✓] PositionalEncoding:", out.shape)
+
+def test_multihead_self_attention():
+    d_model = 32
+    num_heads = 4
+    seq_len = 6
+    batch_size = 2
+    x = torch.randn(batch_size, seq_len, d_model)
+    attn = MultiHeadSelfAttention(d_model, num_heads)
+    out = attn(x)
+    assert out.shape == (batch_size, seq_len, d_model)
+    print("[✓] MultiHeadSelfAttention:", out.shape)
+
+def test_feedforward():
+    d_model = 32
+    d_ff = 64
+    seq_len = 6
+    batch_size = 2
+    x = torch.randn(batch_size, seq_len, d_model)
+    ff = PositionwiseFeedForward(d_model, d_ff)
+    out = ff(x)
+    assert out.shape == (batch_size, seq_len, d_model)
+    print("[✓] FeedForward:", out.shape)
+
+def test_encoder_block():
+    d_model = 64
+    num_heads = 8
+    d_ff = 128
+    seq_len = 6
+    batch_size = 2
+    x = torch.randn(batch_size, seq_len, d_model)
+    block = TransformerEncoderBlock(d_model, num_heads, d_ff)
+    out = block(x)
+    assert out.shape == (batch_size, seq_len, d_model)
+    print("[✓] TransformerEncoderBlock:", out.shape)
+
+def test_transformer_encoder():
+    vocab_size = 1000
+    d_model = 128
+    num_heads = 8
+    num_layers = 4
+    seq_len = 10
+    batch_size = 2
+    x = torch.randint(0, vocab_size, (batch_size, seq_len))
+    encoder = TransformerEncoder(vocab_size, d_model, num_layers, num_heads)
+    out = encoder(x)
+    assert out.shape == (batch_size, seq_len, d_model)
+    print("[✓] TransformerEncoder:", out.shape)
 
 
-# Mock input
-batch_size = 2
-seq_len = 10
-vocab_size = 1000
-d_model = 512
-num_heads = 8
-num_layers = 6
+# ============ RUN ALL TESTS ============
 
-x = torch.randint(0, vocab_size, (batch_size, seq_len))  # token indices
-
-encoder = TransformerEncoder(vocab_size, d_model, num_layers, num_heads)
-output = encoder(x)  # [batch_size, seq_len, d_model]
+if __name__ == "__main__":
+    test_positional_encoding()
+    test_multihead_self_attention()
+    test_feedforward()
+    test_encoder_block()
+    test_transformer_encoder()
