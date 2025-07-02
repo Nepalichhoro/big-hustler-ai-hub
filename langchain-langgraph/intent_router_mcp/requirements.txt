@@ -1,0 +1,8 @@
+langchain
+langgraph
+langchain-core
+langchain-community
+langchain-anthropic
+anthropic
+python-dotenv
+mcp
