@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 
 class SlidingWindowDataset(Dataset):
     def __init__(self, data, seq_len):
@@ -23,3 +24,12 @@ class SlidingWindowDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.data[idx:idx+self.seq_len]  # shape: (seq_len, 1)
+
+# Example 
+
+series = [1,2,3,4,5,6,7,8]
+dataset = SlidingWindowDataset(series, seq_len=3)
+loader = DataLoader(dataset, batch_size=2, shuffle=False)
+
+for batch in loader:
+    print(batch.shape)  # (batch_size, seq_len, 1)
