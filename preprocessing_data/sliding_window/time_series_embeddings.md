@@ -61,7 +61,7 @@ Enrich each time step with features derived from the timestamp:
 - Month of year (1–12)
 
 These categorical values can also be embedded.  
-👉 Example: “Wednesday at 3pm in March” becomes a vector, not just a scalar.
+Example: “Wednesday at 3pm in March” becomes a vector, not just a scalar.
 
 ---
 
