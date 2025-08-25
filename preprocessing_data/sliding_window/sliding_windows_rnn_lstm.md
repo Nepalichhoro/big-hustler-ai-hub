@@ -155,7 +155,41 @@ torch.Size([2, 3, 1])
 
 ---
 
+## Comparison to NLP (Tokens vs Time Steps)
+
+One common confusion is: _are time series steps the same as NLP tokens?_
+
+- **In NLP**
+
+  - Token = word or subword in a sentence.
+  - Sequences are naturally sentences or paragraphs.
+  - Tokens are usually read **once per sentence** (no overlap).
+
+- **In Time Series**
+
+  - Time step = one value at a timestamp.
+  - Long continuous series must be broken into many windows.
+  - **Overlap happens naturally**:
+    ```
+    Series: [1, 2, 3, 4, 5]
+    Windows:
+    [1, 2, 3]
+    [2, 3, 4]
+    [3, 4, 5]
+    ```
+    Here, `2` and `3` appear in multiple windows.
+
+- **Why the difference?**
+  - Text already has natural boundaries (sentences).
+  - Time series has no natural boundary, so sliding windows are needed to expose all subsequences.
+
+Think of time series sliding windows as _creating artificial sentences_ from one long document.
+
+---
+
 ## Summary
 
 Sliding windows transform raw time series into fixed-length, overlapping subsequences.  
 These subsequences become the standard training units for LSTMs/RNNs, enabling models to learn temporal dependencies and patterns effectively.
+
+In contrast to NLP, time series requires **overlap**, because it is one continuous stream, while NLP data already comes in discrete sequences (sentences/documents).
