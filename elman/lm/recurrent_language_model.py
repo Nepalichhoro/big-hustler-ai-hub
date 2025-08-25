@@ -8,7 +8,7 @@ class RecurrentLanguageModel(nn.Module):
         )
         self.rnn = ElmanRNN(emb_dim, num_layers)
         self.fc = nn.Linear(emb_dim, vocab_size)
-    
+    ,
     def forward(self, x):
         embeddings = self.embedding(x)
         rnn_output = self.rnn(embeddings)
