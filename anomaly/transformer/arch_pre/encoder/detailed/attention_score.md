@@ -1,19 +1,20 @@
-
-# 🧩 Transformer Encoder (Mini Version) — README
+# Transformer Encoder (Mini Version) — README
 
 This README shows a **step-by-step attention calculation** with:
-- Input: `(1, 2, 4)` → 2 tokens, each 4 features  
-- Model dimension: `d_model = 8`  
-- Number of heads: `n_heads = 2`  
-- Head dimension: `d_head = 4`  
+
+- Input: `(1, 2, 4)` → 2 tokens, each 4 features
+- Model dimension: `d_model = 8`
+- Number of heads: `n_heads = 2`
+- Head dimension: `d_head = 4`
 
 We’ll walk through: **Q/K/V projection → split heads → scores → weights → weighted sum → concat → output projection → residuals + norms → FFN.**
 
 ---
 
-## 🔢 Step-by-Step Flow
+## Step-by-Step Flow
 
 ### 1. Input
+
 ```
 Input: (1, 2, 4)
 [[[1., 2., 3., 4.],
@@ -23,6 +24,7 @@ Input: (1, 2, 4)
 ---
 
 ### 2. Linear Projections
+
 ```
 ↓ Linear W_q, W_k, W_v
 Q, K, V: (1, 2, 8)
@@ -33,6 +35,7 @@ Q, K, V: (1, 2, 8)
 ---
 
 ### 3. Split into Heads
+
 ```
 ↓ reshape
 Q/K/V heads: (1, 2, 2, 4)
@@ -49,6 +52,7 @@ Head1:
 ---
 
 ### 4. Attention Scores
+
 ```
 ↓ QKᵀ / √d_head
 Head0 Scores:
@@ -63,6 +67,7 @@ Head1 Scores:
 ---
 
 ### 5. Attention Weights (Softmax)
+
 ```
 Head0 Weights:
 [[~0.0, 1.0],
@@ -76,6 +81,7 @@ Head1 Weights:
 ---
 
 ### 6. Multiply by V (Weighted Sum)
+
 ```
 Head0 Output:
 [[5., 6., 7., 8.],
@@ -89,6 +95,7 @@ Head1 Output:
 ---
 
 ### 7. Concatenate Heads
+
 ```
 Concat heads: (1, 2, 8)
 [[5., 6., 7., 8., 0., 0., 0., 0.],
@@ -98,6 +105,7 @@ Concat heads: (1, 2, 8)
 ---
 
 ### 8. Apply W₀ (Output Projection)
+
 ```
 ↓ Linear W₀
 Attn out: (1, 2, 8)
@@ -107,6 +115,7 @@ Attn out: (1, 2, 8)
 ---
 
 ### 9. Residual + LayerNorm
+
 ```
 ↓ Residual + Norm1
 [[ 0.3145,  0.7338,  1.1531,  1.5724, -0.9435, -0.9435, -0.9435, -0.9435],
@@ -116,6 +125,7 @@ Attn out: (1, 2, 8)
 ---
 
 ### 10. FeedForward (FFN)
+
 ```
 ↓ Linear 8→16 → ReLU → Linear 16→8
 [[-0.1593, 0.2188, -0.1640, -0.1524, -0.2531, -0.2986, 0.3109, 0.0736],
@@ -125,6 +135,7 @@ Attn out: (1, 2, 8)
 ---
 
 ### 11. Residual + LayerNorm
+
 ```
 ↓ Residual + Norm2 (Final Output)
 [[ 0.2077,  1.0034,  1.0399,  1.4698, -1.1411, -1.1864, -0.5782, -0.8150],
@@ -133,7 +144,7 @@ Attn out: (1, 2, 8)
 
 ---
 
-# 🔁 Manual Loop Implementation (Both Heads + Concat)
+# Manual Loop Implementation (Both Heads + Concat)
 
 ```python
 import math
@@ -178,7 +189,7 @@ print("Concatenated output:", concat)
 
 ---
 
-# ⚡ PyTorch Vectorized Version
+# PyTorch Vectorized Version
 
 ```python
 import torch, torch.nn as nn, torch.nn.functional as F
